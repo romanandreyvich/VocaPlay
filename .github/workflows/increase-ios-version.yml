@@ -9,7 +9,7 @@ on:
 
 jobs:
   bump-version:
-    runs-on: [self-hosted, mac, ios]
+    runs-on: [ios]
     steps:
       - name: Run test script
         run: ./ci/increase_ios_version.sh "${{ inputs.version }}"
