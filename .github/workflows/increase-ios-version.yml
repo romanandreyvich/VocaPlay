@@ -11,5 +11,7 @@ jobs:
   bump-version:
     runs-on: [ios]
     steps:
+      - uses: actions/checkout@v4
+
       - name: Run test script
         run: ./ci/increase_ios_version.sh "${{ inputs.version }}"
