@@ -3,7 +3,7 @@ set -euo pipefail
 
 VERSION="$1"
 SCHEME="voca play"
-WORKDIR=$(mktemp -d /Users/runner/workspace/ios-test-XXXX)
+WORKDIR=$(mktemp -d ./ios-test-XXXX)
 trap 'rm -rf "$WORKDIR"' EXIT
 
 git clone git@github.com-CI:ORG/REPO.git "$WORKDIR"
