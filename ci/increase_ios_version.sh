@@ -6,7 +6,7 @@ SCHEME="voca play"
 WORKDIR=$(mktemp -d ./ios-test-XXXX)
 trap 'rm -rf "$WORKDIR"' EXIT
 
-git clone git@github.com-CI:ORG/REPO.git "$WORKDIR"
+git clone git@github.com-CI:romanandreyvich/VocaPlay.git "$WORKDIR"
 cd "$WORKDIR"
 
 # 1. Собираем проект (билд для симулятора)
