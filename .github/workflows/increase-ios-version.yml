@@ -1,0 +1,15 @@
+name: Increase iOS Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "New marketing version (e.g. 1.2.3)"
+        required: true
+
+jobs:
+  bump-version:
+    runs-on: [self-hosted, mac, ios]
+    steps:
+      - name: Run test script
+        run: ./ci/increase_ios_version.sh "${{ inputs.version }}"
