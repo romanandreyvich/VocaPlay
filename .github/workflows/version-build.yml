@@ -1,0 +1,81 @@
+name: Version & Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New marketing version (e.g. 1.2.3)'
+        required: true
+      build:
+        description: 'New build number (e.g. 123)'
+        required: true
+
+jobs:
+  ios:
+    runs-on: [ios]
+
+    steps:
+      - name: Ensure working copy for branch
+        run: |
+          mkdir -p /Users/ci/repos
+          if [ ! -d /Users/ci/repos/vocaplay-main/.git ]; then
+            git clone git@github.com-CI:romanandreyvich/VocaPlay.git /Users/ci/repos/vocaplay-main
+          fi
+          cd /Users/ci/repos/vocaplay-main
+          git fetch origin --tags
+          git checkout main
+          git reset --hard origin/main
+
+      - name: Configure git author for CI
+        run: |
+          cd /Users/ci/repos/vocaplay-main
+          git config user.name "CI Bot"
+          git config user.email "ci-bot@example.com"
+
+      - name: Bump app version
+        run: |
+          cd /Users/ci/repos/vocaplay-main
+          xcrun agvtool new-marketing-version "${{ inputs.version }}"
+          xcrun agvtool new-version -all "${{ inputs.build }}"
+
+      - name: Commit and push version bump
+        run: |
+          cd /Users/ci/repos/vocaplay-main
+          git status --short
+          git commit -am "Increased app version to ${{ inputs.version }}"
+          git push origin HEAD
+
+      - name: Build project (Debug / simulator)
+        run: |
+          cd /Users/ci/repos/vocaplay-main
+          xcodebuild \
+            -scheme "VocaPlay" \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            build
+
+      - name: Slack notify (success)
+        if: success()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          payload=$(cat <<EOF
+          {
+            "text": "iOS build succeeded\nVersion: *${{ inputs.version }}*\nBuild: *${{ inputs.build }}*"
+          }
+          EOF
+          )
+          curl -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
+
+      - name: Slack notify (failure)
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          payload=$(cat <<EOF
+          {
+            "text": "iOS build FAILED\nVersion: *${{ inputs.version }}*\nBuild: *${{ inputs.build }}*\nCheck logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+          )
+          curl -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
