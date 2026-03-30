@@ -37,9 +37,9 @@ jobs:
       - name: Bump app version
         run: |
           cd "$REPO_DIR"
-          xcrun agvtool new-marketing-version "${{ inputs.version }}"
-          xcrun agvtool new-version -all "${{ inputs.build }}"
-
+          fastlane run increment_version_number version_number:${{ inputs.version }}
+          fastlane run increment_build_number build_number:${{ inputs.build }}
+          
       - name: Commit and push version bump
         run: |
           cd "$REPO_DIR"
@@ -51,7 +51,7 @@ jobs:
         run: |
           cd "$REPO_DIR"
           xcodebuild \
-            -scheme "VocaPlay" \
+            -scheme "voca play" \
             -sdk iphonesimulator \
             -configuration Debug \
             build
