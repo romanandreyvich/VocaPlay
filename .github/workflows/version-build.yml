@@ -61,9 +61,16 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
+          VERSION="${{ inputs.version }}"
+          BUILD="${{ inputs.build }}"
           payload=$(cat <<EOF
           {
-            "text": "iOS build succeeded\nVersion: *${{ inputs.version }}*\nBuild: *${{ inputs.build }}*"
+            "attachments": [
+              {
+                "color": "#2EB886",
+                "text": "*Build succeeded*\nVersion: ${VERSION} (${BUILD})"
+              }
+            ]
           }
           EOF
           )
@@ -74,10 +81,23 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
+          VERSION="${{ inputs.version }}"
+          BUILD="${{ inputs.build }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          ERROR_TEXT=$(tail -n 20 /tmp/ios_build.log 2>/dev/null | sed 's/"/\\"/g')
+          if [ -z "$ERROR_TEXT" ]; then
+            ERROR_TEXT="No log captured. See run."
+          fi
           payload=$(cat <<EOF
           {
-            "text": "iOS build FAILED\nVersion: *${{ inputs.version }}*\nBuild: *${{ inputs.build }}*\nCheck logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            "attachments": [
+              {
+                "color": "#E01E5A",
+                "text": "<!channel> *Build FAILED*\nVersion: ${VERSION} (${BUILD})\nRun: ${RUN_URL}\n\`\`\`${ERROR_TEXT}\`\`\`"
+              }
+            ]
           }
           EOF
           )
           curl -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
+          exit 1
