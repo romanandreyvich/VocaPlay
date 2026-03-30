@@ -13,41 +13,43 @@ on:
 jobs:
   ios:
     runs-on: [ios]
-
+    env:
+        REPO_DIR: ~/ci/repos/vocaplay-main
+        
     steps:
       - name: Ensure working copy for branch
         run: |
-          mkdir -p /Users/ci/repos
-          if [ ! -d /Users/ci/repos/vocaplay-main/.git ]; then
-            git clone git@github.com-CI:romanandreyvich/VocaPlay.git /Users/ci/repos/vocaplay-main
+          mkdir -p "$(dirname "$REPO_DIR")"
+          if [ ! -d "$REPO_DIR/.git" ]; then
+            git clone git@github.com-CI:romanandreyvich/VocaPlay.git "$REPO_DIR"
           fi
-          cd /Users/ci/repos/vocaplay-main
+          cd "$REPO_DIR"
           git fetch origin --tags
           git checkout main
           git reset --hard origin/main
 
       - name: Configure git author for CI
         run: |
-          cd /Users/ci/repos/vocaplay-main
+          cd "$REPO_DIR"
           git config user.name "CI Bot"
           git config user.email "ci-bot@example.com"
 
       - name: Bump app version
         run: |
-          cd /Users/ci/repos/vocaplay-main
+          cd "$REPO_DIR"
           xcrun agvtool new-marketing-version "${{ inputs.version }}"
           xcrun agvtool new-version -all "${{ inputs.build }}"
 
       - name: Commit and push version bump
         run: |
-          cd /Users/ci/repos/vocaplay-main
+          cd "$REPO_DIR"
           git status --short
           git commit -am "Increased app version to ${{ inputs.version }}"
           git push origin HEAD
 
       - name: Build project (Debug / simulator)
         run: |
-          cd /Users/ci/repos/vocaplay-main
+          cd "$REPO_DIR"
           xcodebuild \
             -scheme "VocaPlay" \
             -sdk iphonesimulator \
