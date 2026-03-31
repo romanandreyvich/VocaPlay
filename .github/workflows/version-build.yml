@@ -15,7 +15,8 @@ jobs:
     runs-on: [ios]
     env:
         REPO_DIR: ~/ci/repos/vocaplay-main
-
+        BUILD_LOG: ~/tmp/build_log_${{ github.run_id }}.log
+      
     steps:
       - name: Ensure working copy for branch
         run: |
@@ -50,11 +51,13 @@ jobs:
       - name: Build project (Debug / simulator)
         run: |
           cd "$REPO_DIR"
+          : > "$BUILD_LOG"
+          set -o pipefail
           xcodebuild \
             -scheme "voca play" \
             -sdk iphonesimulator \
             -configuration Debug \
-            build
+            build 2>&1 | tee -a "$BUILD_LOG"
 
       - name: Slack notify (success)
         if: success()
@@ -85,10 +88,10 @@ jobs:
           BUILD="${{ inputs.build }}"
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          if [ -f /tmp/ios_build.log ]; then
-            ERROR_TEXT=$(tail -n 20 /tmp/ios_build.log | sed 's/"/\\"/g')
+          if [ -s "$BUILD_LOG" ]; then
+            ERROR_TEXT=$(tail -n 20 "$BUILD_LOG" | sed 's/"/\\"/g')
           else
-            ERROR_TEXT="Error occurred before build step (no build log available). See run logs for details."
+            ERROR_TEXT="Log file $BUILD_LOG not found. See run logs."
           fi
 
           payload=$(cat <<EOF
