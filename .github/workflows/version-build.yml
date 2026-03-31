@@ -14,7 +14,7 @@ jobs:
   ios:
     runs-on: [ios]
     env:
-        REPO_DIR: ~/ci/repos/vocaplay-main
+        REPO_DIR: ${{ env.HOME }}/ci/repos/vocaplay-main
 
     steps:
       - name: Init build log path

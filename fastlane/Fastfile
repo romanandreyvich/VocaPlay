@@ -16,7 +16,7 @@ platform :ios do
          sh("git commit -am 'Increased app version to #{version}'")
       end
 
-      sh('xcodebuild -scheme "voca play" -sdk iphonesimulator -configuration Debug build')
+      sh('cd #{ENV['REPO_DIR']} && xcodebuild -scheme "voca play" -sdk iphonesimulator -configuration Debug build')
 
       slack(
         message: "Build succeeded :rocket:",
