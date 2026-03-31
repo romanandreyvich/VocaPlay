@@ -2,9 +2,10 @@ default_platform(:ios)
 
 platform :ios do
   lane :release do |options|
-    version = options[:version]
-    build   = options[:build]
-    run_url = ENV["RUN_URL"]
+    version   = options[:version]
+    build     = options[:build]
+    run_url   = ENV["RUN_URL"]
+    repo_dir  = ENV["REPO_DIR"] || File.expand_path("..", __dir__)
 
     begin
       increment_version_number(version_number: version)
@@ -17,8 +18,14 @@ platform :ios do
         sh("git push origin HEAD")
       end
 
-      Dir.chdir(ENV['REPO_DIR']) do
-        sh('xcodebuild -scheme "voca play" -sdk iphonesimulator -configuration Debug build')
+      Dir.chdir(repo_dir) do
+        sh(%(xcodebuild \
+              -project "voca play.xcodeproj" \
+              -scheme "voca play" \
+              -sdk iphonesimulator \
+              -configuration Debug \
+              -destination 'platform=iOS Simulator,name=iPhone 16e' \
+              build))
       end
 
       slack(
