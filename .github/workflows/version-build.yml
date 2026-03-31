@@ -41,74 +41,10 @@ jobs:
           git config user.name "CI Bot"
           git config user.email "ci-bot@example.com"
 
-      - name: Bump app version
-        run: |
-          cd "$REPO_DIR"
-          fastlane run increment_version_number version_number:${{ inputs.version }}
-          fastlane run increment_build_number build_number:${{ inputs.build }}
-          
-      - name: Commit and push version bump
-        run: |
-          cd "$REPO_DIR"
-          git status --short
-          git commit -am "Increased app version to ${{ inputs.version }}"
-          git push origin HEAD
-
-      - name: Build project (Debug / simulator)
-        run: |
-          cd "$REPO_DIR"
-          set -o pipefail
-          xcodebuild \
-            -scheme "voca play" \
-            -sdk iphonesimulator \
-            -configuration Debug \
-            build 2>&1 | tee -a "$BUILD_LOG"
-
-      - name: Slack notify (success)
-        if: success()
+      - name: Fastlane release
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          VERSION="${{ inputs.version }}"
-          BUILD="${{ inputs.build }}"
-          payload=$(cat <<EOF
-          {
-            "attachments": [
-              {
-                "color": "#2EB886",
-                "text": "*Build succeeded*\nVersion: ${VERSION} (${BUILD})"
-              }
-            ]
-          }
-          EOF
-          )
-          curl -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
-
-      - name: Slack notify (failure)
-        if: failure()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          VERSION="${{ inputs.version }}"
-          BUILD="${{ inputs.build }}"
-          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          if [ -s "$BUILD_LOG" ]; then
-            ERROR_TEXT=$(tail -n 20 "$BUILD_LOG" | sed 's/"/\\"/g')
-          else
-            ERROR_TEXT="Log file $BUILD_LOG not found. See run logs."
-          fi
-
-          payload=$(cat <<EOF
-          {
-            "attachments": [
-              {
-                "color": "#E01E5A",
-                "text": "<!channel> *Build FAILED*\nVersion: ${VERSION} (${BUILD})\nRun: ${RUN_URL}\n\`\`\`${ERROR_TEXT}\`\`\`"
-              }
-            ]
-          }
-          EOF
-          )
-          curl -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
-          exit 1
+          cd "$REPO_DIR"
+          fastlane ios release version:${{ inputs.version }} build:${{ inputs.build }}
