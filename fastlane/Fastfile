@@ -41,7 +41,7 @@ platform :ios do
         success: true,
         payload: {
           "Version" => "#{version} (#{build})",
-          "Run" => run_url
+          "Run"     => run_url
         },
         default_payloads: []
       )
@@ -49,7 +49,14 @@ platform :ios do
     rescue => e
       error_text =
         if File.exist?(build_log) && !File.zero?(build_log)
-          File.readlines(build_log).last(20).join
+          lines = File.readlines(build_log, chomp: true)
+          error_lines = lines.select { |line| line.include?(" error:") }
+
+          if error_lines.any?
+            error_lines.join("\n")
+          else
+            lines.last(40).join("\n")
+          end
         else
           e.message
         end
@@ -59,8 +66,8 @@ platform :ios do
         success: false,
         payload: {
           "Version" => "#{version} (#{build})",
-          "Run"    => run_url,
-          "Error"  => error_text
+          "Run"     => run_url,
+          "Error"   => error_text
         },
         default_payloads: []
       )
