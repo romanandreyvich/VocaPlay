@@ -10,7 +10,11 @@ platform :ios do
       increment_version_number(version_number: version)
       increment_build_number(build_number: build)
 
-      sh("git commit -am 'Increased app version to #{version}'")
+      if sh("git status --porcelain").strip.empty?
+         UI.message("No version changes to commit")
+      else
+         sh("git commit -am 'Increased app version to #{version}'")
+      end
 
       sh('xcodebuild -scheme "voca play" -sdk iphonesimulator -configuration Debug build')
 
