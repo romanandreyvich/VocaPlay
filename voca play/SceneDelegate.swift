@@ -9,6 +9,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let appViewModel = AppViewModel()
         let contentView = ContentView(viewModel: appViewModel)
+
+        test
         
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = UIHostingController(rootView: contentView)

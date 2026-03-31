@@ -1,3 +1,5 @@
+require "tmpdir"
+
 default_platform(:ios)
 
 platform :ios do
@@ -6,6 +8,9 @@ platform :ios do
     build     = options[:build]
     run_url   = ENV["RUN_URL"]
     repo_dir  = ENV["REPO_DIR"] || File.expand_path("..", __dir__)
+    build_log = File.join(Dir.tmpdir, "vocaplay_build.log")
+
+    File.delete(build_log) if File.exist?(build_log)
 
     begin
       increment_version_number(version_number: version)
@@ -19,13 +24,16 @@ platform :ios do
       end
 
       Dir.chdir(repo_dir) do
-        sh(%(xcodebuild \
-              -project "voca play.xcodeproj" \
-              -scheme "voca play" \
-              -sdk iphonesimulator \
-              -configuration Debug \
-              -destination 'platform=iOS Simulator,name=iPhone 16e' \
-              build))
+        sh(%(
+          set -o pipefail &&
+          xcodebuild \
+            -project "voca play.xcodeproj" \
+            -scheme "voca play" \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 16e' \
+            build 2>&1 | tee -a "#{build_log}"
+        ))
       end
 
       slack(
@@ -37,14 +45,22 @@ platform :ios do
         },
         default_payloads: []
       )
+
     rescue => e
+      error_text =
+        if File.exist?(build_log) && !File.zero?(build_log)
+          File.readlines(build_log).last(20).join
+        else
+          e.message
+        end
+
       slack(
         message: "<!channel> Build failed :x:",
         success: false,
         payload: {
           "Version" => "#{version} (#{build})",
-          "Run" => run_url,
-          "Error" => e.to_s
+          "Run"    => run_url,
+          "Error"  => error_text
         },
         default_payloads: []
       )
