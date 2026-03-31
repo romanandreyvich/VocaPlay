@@ -14,8 +14,8 @@ jobs:
   ios:
     runs-on: [ios]
     env:
-        REPO_DIR: /Users/ci/repos/vocaplay-main
-        
+        REPO_DIR: ~/ci/repos/vocaplay-main
+
     steps:
       - name: Ensure working copy for branch
         run: |
@@ -84,10 +84,13 @@ jobs:
           VERSION="${{ inputs.version }}"
           BUILD="${{ inputs.build }}"
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          ERROR_TEXT=$(tail -n 20 /tmp/ios_build.log 2>/dev/null | sed 's/"/\\"/g')
-          if [ -z "$ERROR_TEXT" ]; then
-            ERROR_TEXT="No log captured. See run."
+
+          if [ -f /tmp/ios_build.log ]; then
+            ERROR_TEXT=$(tail -n 20 /tmp/ios_build.log | sed 's/"/\\"/g')
+          else
+            ERROR_TEXT="Error occurred before build step (no build log available). See run logs for details."
           fi
+
           payload=$(cat <<EOF
           {
             "attachments": [
