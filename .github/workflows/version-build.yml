@@ -13,16 +13,13 @@ on:
 jobs:
   ios:
     runs-on: [ios]
-    env:
-        REPO_DIR: ${{ env.HOME }}/ci/repos/vocaplay-main
 
     steps:
-      - name: Init build log path
+      - name: Init paths
         run: |
-          BUILD_LOG_PATH="$HOME/tmp/build_log_${{ github.run_id }}.log"
-          mkdir -p "$(dirname "$BUILD_LOG_PATH")"
-          : > "$BUILD_LOG_PATH"
-          echo "BUILD_LOG=$BUILD_LOG_PATH" >> $GITHUB_ENV
+          echo "REPO_DIR=$HOME/ci/repos/vocaplay-main" >> $GITHUB_ENV
+          echo "BUILD_LOG=$HOME/tmp/build_log_${{ github.run_id }}.log" >> $GITHUB_ENV
+          mkdir -p "$HOME/tmp"
 
       - name: Ensure working copy for branch
         run: |

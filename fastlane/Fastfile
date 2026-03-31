@@ -3,7 +3,7 @@ default_platform(:ios)
 platform :ios do
   lane :release do |options|
     version = options[:version]
-    build = options[:build]
+    build   = options[:build]
     run_url = ENV["RUN_URL"]
 
     begin
@@ -11,12 +11,15 @@ platform :ios do
       increment_build_number(build_number: build)
 
       if sh("git status --porcelain").strip.empty?
-         UI.message("No version changes to commit")
+        UI.message("No version changes to commit")
       else
-         sh("git commit -am 'Increased app version to #{version}'")
+        sh("git commit -am 'Increased app version to #{version}'")
+        sh("git push origin HEAD")
       end
 
-      sh('cd #{ENV['REPO_DIR']} && xcodebuild -scheme "voca play" -sdk iphonesimulator -configuration Debug build')
+      Dir.chdir(ENV['REPO_DIR']) do
+        sh('xcodebuild -scheme "voca play" -sdk iphonesimulator -configuration Debug build')
+      end
 
       slack(
         message: "Build succeeded :rocket:",
