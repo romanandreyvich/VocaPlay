@@ -24,20 +24,29 @@ platform :ios do
       end
 
       Dir.chdir(repo_dir) do
-        sh(%(
-          set -o pipefail &&
-          xcodebuild \
-            -project "voca play.xcodeproj" \
-            -scheme "voca play" \
-            -sdk iphonesimulator \
-            -configuration Debug \
-            -destination 'platform=iOS Simulator,name=iPhone 16e' \
-            build 2>&1 | tee -a "#{build_log}"
-        ))
+        gym(
+          project: "voca play.xcodeproj",
+          scheme: "voca play",
+          configuration: "Release",
+          clean: true,
+          export_method: "app-store",
+          output_directory: "build",
+          output_name: "VocaPlay",
+          log_path: build_log
+        )
       end
 
+      pilot(
+        api_key: app_store_connect_api_key(
+          key_id:      ENV.fetch("ASC_KEY_ID"),
+          issuer_id:   ENV.fetch("ASC_ISSUER_ID"),
+          key_content: ENV.fetch("ASC_KEY_CONTENT")
+        ),
+        skip_submission: true
+      )
+
       slack(
-        message: "Build succeeded :rocket:",
+        message: "Build uploaded to TestFlight :rocket:",
         success: true,
         payload: {
           "Version" => "#{version} (#{build})",
@@ -51,12 +60,7 @@ platform :ios do
         if File.exist?(build_log) && !File.zero?(build_log)
           lines = File.readlines(build_log, chomp: true)
           error_lines = lines.select { |line| line.include?(" error:") }
-
-          if error_lines.any?
-            error_lines.join("\n")
-          else
-            lines.last(40).join("\n")
-          end
+          error_lines.any? ? error_lines.join("\n") : lines.last(20).join("\n")
         else
           e.message
         end
