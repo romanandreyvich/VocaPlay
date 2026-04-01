@@ -33,7 +33,7 @@ platform :ios do
         export_method: "app-store",
         output_directory: output_dir,
         output_name: "VocaPlay",
-        log_path: build_log
+        buildlog_path: build_log
       )
 
       pilot(
