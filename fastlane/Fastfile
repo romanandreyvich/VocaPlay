@@ -4,15 +4,16 @@ default_platform(:ios)
 
 platform :ios do
   lane :release do |options|
-    version   = options[:version]
-    build     = options[:build]
-    run_url   = ENV["RUN_URL"]
-    repo_dir  = ENV.fetch("REPO_DIR")
-    build_log = File.join(Dir.tmpdir, "vocaplay_build.log")
-    project_path = File.join(repo_dir, "voca play.xcodeproj")
-    output_dir   = File.join(repo_dir, "build")
+    version        = options[:version]
+    build          = options[:build]
+    run_url        = ENV["RUN_URL"]
+    repo_dir       = ENV.fetch("REPO_DIR")
+    log_dir        = File.join(Dir.tmpdir, "vocaplay_build_logs")
+    project_path   = File.join(repo_dir, "voca play.xcodeproj")
+    output_dir     = File.join(repo_dir, "build")
 
-    File.delete(build_log) if File.exist?(build_log)
+    FileUtils.rm_rf(log_dir)
+    FileUtils.mkdir_p(log_dir)
 
     begin
       increment_version_number(version_number: version)
@@ -33,7 +34,7 @@ platform :ios do
         export_method: "app-store",
         output_directory: output_dir,
         output_name: "VocaPlay",
-        buildlog_path: build_log
+        buildlog_path: log_dir
       )
 
       pilot(
@@ -56,9 +57,10 @@ platform :ios do
       )
 
     rescue => e
+      log_file = Dir[File.join(log_dir, "**", "*.log")].max
       error_text =
-        if File.exist?(build_log) && !File.zero?(build_log)
-          lines = File.readlines(build_log, chomp: true)
+        if log_file && File.size?(log_file)
+          lines = File.readlines(log_file, chomp: true)
           error_lines = lines.select { |line| line.include?(" error:") }
           error_lines.any? ? error_lines.join("\n") : lines.last(20).join("\n")
         else
