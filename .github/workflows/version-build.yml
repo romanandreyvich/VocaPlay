@@ -18,7 +18,6 @@ jobs:
       - name: Init paths
         run: |
           echo "REPO_DIR=$HOME/ci/repos/vocaplay-main" >> $GITHUB_ENV
-          echo "BUILD_LOG=$HOME/tmp/build_log_${{ github.run_id }}.log" >> $GITHUB_ENV
           mkdir -p "$HOME/tmp"
 
       - name: Ensure working copy for branch

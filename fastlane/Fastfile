@@ -7,7 +7,7 @@ platform :ios do
     version   = options[:version]
     build     = options[:build]
     run_url   = ENV["RUN_URL"]
-    repo_dir  = ENV["REPO_DIR"] || File.expand_path("..", __dir__)
+    repo_dir  = ENV.fetch("REPO_DIR")
     build_log = File.join(Dir.tmpdir, "vocaplay_build.log")
 
     File.delete(build_log) if File.exist?(build_log)
